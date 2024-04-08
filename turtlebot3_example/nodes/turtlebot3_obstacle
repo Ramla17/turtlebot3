@@ -45,7 +45,7 @@ class Obstacle():
         if min_distance < 0.5:
         # If obstacle is very close, turn sharply to avoid it
             turn_angle = 45  # Turn away from the obstacle by 45 degrees
-        elif min_distance < 1.0:
+        elif min_distance > 0.5 and min_distance < 1.0:
         # If obstacle is moderately close, turn moderately to avoid it
             turn_angle = 30  # Turn away from the obstacle by 30 degrees
         else:
