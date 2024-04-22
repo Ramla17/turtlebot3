@@ -94,9 +94,11 @@ class Obstacle():
                 # The robot determins whether to turn left or right
                 if lidar_distances.index(min_distance < len(lidar_distances) / 2): 
                     # It turns right
+                    print("turn right")
                     twist.angular.z = -0.5
                 else:
                     #It turns left
+                    print("turn left")
                     twist.angular.z = 0.5
 
                 # Move backwards to avoid the obstacle
@@ -104,7 +106,8 @@ class Obstacle():
                 self._cmd_pub.publish(twist)
 
             else:
-                twist.linear.x = LINEAR_VEL
+                # Move foward
+                twist.linear.x = LINEAR_VEL 
                 twist.angular.z = 0.0
                 self._cmd_pub.publish(twist)
                 turtlebot_moving = True
