@@ -21,8 +21,42 @@ import rospy
 import math
 from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
-import threading #til at stoppe robotten efter 2 min (ikke implementeret endnu)
 import time
+import smbus
+
+# Get I2C bus
+bus = smbus.SMBus(1)
+
+# ISL29125 address, 0x44(68)
+# Select configuation-1register, 0x01(01)
+# 0x0D(13) Operation: RGB, Range: 360 lux, Res: 16 Bits
+bus.write_byte_data(0x44, 0x01, 0x05)
+time.sleep(1)
+
+def getAndUpdateColour():
+	while True:
+        
+            data = bus.read_i2c_block_data(0x44, 0x09, 6) #Selects the right registers
+            time.sleep(0.001)
+        
+            green = data[1] + data[0]/256 # Calculates the levels of each color [0, 255]
+            red = data[3] + data[2]/256
+            blue = data[5] + data[4]/256
+            
+            # Determines the color based on which has the higher value
+            color = ""
+            if green > red and green > blue: 
+                color = "Green"
+            elif blue > red:
+                color = "Blue"
+            else:
+                color = "Red"
+
+            print("RGB(%d %d %d)" % (red, green, blue))
+
+            print("The color is: " + color)
+        
+        
 
 LINEAR_VEL = 0.19 # Den koerer ikke, hvis LINEAR_VEL > 0.21
 # STOP_DISTANCE = 0.2
@@ -74,46 +108,52 @@ class Obstacle():
         twist = Twist()
         turtlebot_moving = True
 
-        while not rospy.is_shutdown():
+        start_time = time.time()
+        endtime = 120
+        while (time.time() - start_time) < endtime:
+            getAndUpdateColour()
+
             lidar_distances = self.get_scan()
             min_distance = min(lidar_distances)
             print("min_distance: %f", min_distance)
 
+            # Soft turns
             if MEDIUM_DISTANCE < min_distance < SOFT_DISTANCE:
-                if turtlebot_moving:
+                #if turtlebot_moving:
                     # Stop the robot's movement by setting linear and angular velocities to zero
-                    twist = Twist()
-                    twist.linear.x = 0.0
-                    twist.angular.z = 0.0
-                    self._cmd_pub.publish(twist)
-                    turtlebot_moving = False
-                    rospy.loginfo('Robot movement halted.')
+                    # twist = Twist()
+                    # twist.linear.x = 0.0
+                    # twist.angular.z = 0.0
+                    # self._cmd_pub.publish(twist)
+                    # turtlebot_moving = False
+                    # rospy.loginfo('Robot movement halted.')
 
                 # The robot determins whether to turn left or right
                 if lidar_distances.index(min_distance) < len(lidar_distances) / 2: 
                     # It turns right
-                    twist.linear.x = 0.02
+                    twist.linear.x = 0.125
                     twist.angular.z = -0.3
                     self._cmd_pub.publish(twist)
                     turtlebot_moving = True
                     rospy.loginfo('turning right softly %f', min_distance)
                 else:
                     #It turns left
-                    twist.linear.x = 0.02
+                    twist.linear.x = 0.125
                     twist.angular.z = 0.3
                     self._cmd_pub.publish(twist)
                     turtlebot_moving = True
                     rospy.loginfo('turning left softly %f', min_distance)
 
+            # Medium turns
             if HARD_DISTANCE < min_distance < MEDIUM_DISTANCE:
-                if turtlebot_moving:
+                #if turtlebot_moving:
                     # Stop the robot's movement by setting linear and angular velocities to zero
-                    twist = Twist()
-                    twist.linear.x = 0.0
-                    twist.angular.z = 0.0
-                    self._cmd_pub.publish(twist)
-                    turtlebot_moving = False
-                    rospy.loginfo('Robot movement halted.')
+                    # twist = Twist()
+                    # twist.linear.x = 0.0
+                    # twist.angular.z = 0.0
+                    # self._cmd_pub.publish(twist)
+                    # turtlebot_moving = False
+                    # rospy.loginfo('Robot movement halted.')
 
                 # The robot determins whether to turn left or right
                 if lidar_distances.index(min_distance) < len(lidar_distances) / 2: 
@@ -135,6 +175,7 @@ class Obstacle():
                 # twist.linear.x = -0.1
                 # self._cmd_pub.publish(twist)        
 
+            # Hard turns
             if min_distance < HARD_DISTANCE:
                 if turtlebot_moving:
                     # Stop the robot's movement by setting linear and angular velocities to zero
@@ -172,8 +213,6 @@ class Obstacle():
                 self._cmd_pub.publish(twist)
                 turtlebot_moving = True
                 rospy.loginfo('Distance of the obstacle : %f', min_distance)
-
-            # threading.Timer(120, print("Kill robot (2min timer)") + exit()).start()
 
 def main():
     rospy.init_node('turtlebot3_obstacle')
