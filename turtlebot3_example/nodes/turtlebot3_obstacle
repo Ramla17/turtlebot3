@@ -33,29 +33,10 @@ bus = smbus.SMBus(1)
 bus.write_byte_data(0x44, 0x01, 0x05)
 time.sleep(1)
 
-def getAndUpdateColour():
-	while True:
+#def getAndUpdateColour():
+	#while True:
         
-            data = bus.read_i2c_block_data(0x44, 0x09, 6) #Selects the right registers
-            time.sleep(0.001)
-        
-            green = data[1] + data[0]/256 # Calculates the levels of each color [0, 255]
-            red = data[3] + data[2]/256
-            blue = data[5] + data[4]/256
-            
-            # Determines the color based on which has the higher value
-            color = ""
-            if green > red and green > blue: 
-                color = "Green"
-            elif blue > red:
-                color = "Blue"
-            else:
-                color = "Red"
-
-            print("RGB(%d %d %d)" % (red, green, blue))
-
-            print("The color is: " + color)
-        
+           
         
 
 LINEAR_VEL = 0.19 # Den koerer ikke, hvis LINEAR_VEL > 0.21
@@ -214,6 +195,25 @@ class Obstacle():
                 turtlebot_moving = True
                 rospy.loginfo('Distance of the obstacle : %f', min_distance)
 
+            data = bus.read_i2c_block_data(0x44, 0x09, 6) #Selects the right registers
+            time.sleep(0.001)
+            green = data[1] + data[0]/256 # Calculates the levels of each color [0, 255]
+            red = data[3] + data[2]/256
+            blue = data[5] + data[4]/256
+            
+            # Determines the color based on which has the higher value
+            color = ""
+            if green > red and green > blue: 
+                color = "Green"
+            elif blue > red:
+                color = "Blue"
+            else:
+                color = "Red"
+
+            print("RGB(%d %d %d)" % (red, green, blue))
+
+            print("The color is: " + color)
+        
 def main():
     rospy.init_node('turtlebot3_obstacle')
     try:
