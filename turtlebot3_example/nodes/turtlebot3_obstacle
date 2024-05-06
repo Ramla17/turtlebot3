@@ -23,8 +23,9 @@ from sensor_msgs.msg import LaserScan
 from geometry_msgs.msg import Twist
 import time
 import smbus
-import keyboard
 import RPi.GPIO as GPIO
+import threading
+import sys
 
 # Get I2C bus
 bus = smbus.SMBus(1)
@@ -49,9 +50,9 @@ LINEAR_VEL = 0.19 # Den koerer ikke, hvis LINEAR_VEL > 0.21
 # STOP_DISTANCE = 0.2
 LIDAR_ERROR = 0.05
 # SAFE_STOP_DISTANCE = STOP_DISTANCE + LIDAR_ERROR
-SOFT_DISTANCE = 0.5 + LIDAR_ERROR
-MEDIUM_DISTANCE = 0.375 + LIDAR_ERROR
-HARD_DISTANCE = 0.25 + LIDAR_ERROR
+SOFT_DISTANCE = 0.3 + LIDAR_ERROR
+MEDIUM_DISTANCE = 0.25 + LIDAR_ERROR
+HARD_DISTANCE = 0.2 + LIDAR_ERROR
 
 class Obstacle():
     def __init__(self):
@@ -94,68 +95,88 @@ class Obstacle():
     def obstacle(self):
         twist = Twist()
         turtlebot_moving = True
+        obstacle_counter = 0
+        global victim_counter
+        victim_counter = 0
+        collision_radius = 0.1
+        soft_turns = 0
+        medium_turns = 0
+        hard_turns = 0
 
-        start_time = time.time()
-        endtime = 120
-        while (time.time() - start_time) < endtime:
+
+        # Function to quit the program
+        def quit_program():
+            twist.linear.x = 0.0
+            twist.angular.z = 0.0
+            self._cmd_pub.publish(twist)
+            turtlebot_moving = False
+            print("2 minutes passed - stopping\n")
+            print("_______________________________")
+            print("Obstacles hit:", obstacle_counter)
+            print("Victims detected:", victim_counter)
+            print("Soft turns:", soft_turns)
+            print("Medium turns:", medium_turns)
+            print("Hard turns:", hard_turns)
+            time.sleep(2)
+            print("quitting..")
+            sys.exit()
+
+        # Create a timer that will call 'quit_program' after 2 minutes (120 seconds)
+        # timer = threading.Timer(10, quit_program)
+        # timer.start()  # Start the timer
+
+        runtime_start = time.time() # for the stop function after 2 minutes
+
+        start_time_victim = 10 # For the victim counter, so it will read first victim. 
+
+        start_time_obstacle = 10
+
+        while not rospy.is_shutdown():
 
             lidar_distances = self.get_scan()
             min_distance = min(lidar_distances)
-            print("min_distance: %f", min_distance)
+            print("min_distance:", min_distance)
+
+            if((time.time() - runtime_start) >= 120.0):
+                quit_program()
 
             # Soft turns
             if MEDIUM_DISTANCE < min_distance < SOFT_DISTANCE:
-                #if turtlebot_moving:
-                    # Stop the robot's movement by setting linear and angular velocities to zero
-                    # twist = Twist()
-                    # twist.linear.x = 0.0
-                    # twist.angular.z = 0.0
-                    # self._cmd_pub.publish(twist)
-                    # turtlebot_moving = False
-                    # rospy.loginfo('Robot movement halted.')
-
+                soft_turns += 1
                 # The robot determins whether to turn left or right
                 if lidar_distances.index(min_distance) < len(lidar_distances) / 2: 
                     # It turns right
-                    twist.linear.x = 0.125
-                    twist.angular.z = -0.3
+                    twist.linear.x = LINEAR_VEL
+                    twist.angular.z = -0.25
                     self._cmd_pub.publish(twist)
                     turtlebot_moving = True
-                    rospy.loginfo('turning right softly %f', min_distance)
+                    rospy.loginfo('turning right softly')
                 else:
                     #It turns left
-                    twist.linear.x = 0.125
-                    twist.angular.z = 0.3
+                    twist.linear.x = LINEAR_VEL
+                    twist.angular.z = 0.25
                     self._cmd_pub.publish(twist)
                     turtlebot_moving = True
-                    rospy.loginfo('turning left softly %f', min_distance)
+                    rospy.loginfo('turning left softly')
 
             # Medium turns
             if HARD_DISTANCE < min_distance < MEDIUM_DISTANCE:
-                #if turtlebot_moving:
-                    # Stop the robot's movement by setting linear and angular velocities to zero
-                    # twist = Twist()
-                    # twist.linear.x = 0.0
-                    # twist.angular.z = 0.0
-                    # self._cmd_pub.publish(twist)
-                    # turtlebot_moving = False
-                    # rospy.loginfo('Robot movement halted.')
-
+                medium_turns += 1
                 # The robot determins whether to turn left or right
                 if lidar_distances.index(min_distance) < len(lidar_distances) / 2: 
                     # It turns right
                     twist.linear.x = 0.25
-                    twist.angular.z = -0.3
+                    twist.angular.z = -0.5
                     self._cmd_pub.publish(twist)
                     turtlebot_moving = True
-                    rospy.loginfo('turning right medium%f', min_distance)
+                    rospy.loginfo('turning right medium')
                 else:
                     #It turns left
                     twist.linear.x = 0.25
-                    twist.angular.z = 0.3
+                    twist.angular.z = 0.5
                     self._cmd_pub.publish(twist)
                     turtlebot_moving = True
-                    rospy.loginfo('turning left medium%f', min_distance)
+                    rospy.loginfo('turning left medium')
 
                 # Move backwards to avoid the obstacle
                 # twist.linear.x = -0.1
@@ -163,6 +184,7 @@ class Obstacle():
 
             # Hard turns
             if min_distance < HARD_DISTANCE:
+                hard_turns += 1
                 if turtlebot_moving:
                     # Stop the robot's movement by setting linear and angular velocities to zero
                     twist = Twist()
@@ -170,7 +192,6 @@ class Obstacle():
                     twist.angular.z = 0.0
                     self._cmd_pub.publish(twist)
                     turtlebot_moving = False
-                    rospy.loginfo('Robot movement halted.')
 
                 # The robot determins whether to turn left or right
                 if lidar_distances.index(min_distance) < len(lidar_distances) / 2: 
@@ -179,14 +200,14 @@ class Obstacle():
                     twist.angular.z = -1.0
                     self._cmd_pub.publish(twist)
                     turtlebot_moving = True
-                    rospy.loginfo('turning right hard %f', min_distance)
+                    rospy.loginfo('turning right hard')
                 else:
                     #It turns left
                     twist.linear.x = 0.3
                     twist.angular.z = 1.0
                     self._cmd_pub.publish(twist)
                     turtlebot_moving = True
-                    rospy.loginfo('turning left hard %f', min_distance)
+                    rospy.loginfo('turning left hard')
 
                 # Move backwards to avoid the obstacle
                 twist.linear.x = -0.25
@@ -199,16 +220,23 @@ class Obstacle():
                 self._cmd_pub.publish(twist)
                 turtlebot_moving = True
                 rospy.loginfo('Distance of the obstacle : %f', min_distance)
+                
+            if (min_distance <= collision_radius):
+                if(time.time() - start_time_victim >= 10.0):
+                    obstacle_counter += 1
+                    start_time_obstacle = time.time()
+                    print("collision detected")
 
             data = bus.read_i2c_block_data(0x44, 0x09, 6) #Selects the right registers
             time.sleep(0.001)
             green = data[1] + data[0]/256 # Calculates the levels of each color [0, 255]
             red = data[3] + data[2]/256
             blue = data[5] + data[4]/256
-            
+        
             # Determines the color based on which has the higher value
             color = ""
             blue = blue * 2
+            victim_timer = 10 #victim timer set to default so it reads first victim
             if green >= red and green >= blue: 
                 color = "Green"
                 GPIO.output(GPIO_LED, GPIO.LOW)
@@ -217,24 +245,38 @@ class Obstacle():
                 color = "Blue"
                 GPIO.output(GPIO_LED, GPIO.LOW)
 
-            else:
+            elif red > blue and red > green:
                 color = "Red"
-                GPIO.output(GPIO_LED, GPIO.HIGH) #LED set to high
+                #stops the robot and LED blinks when victim is detected
+                if(time.time() - start_time_victim >= 10.0):
+                    print("_________________")
+                    print("!!! Victim Detected !!!")
+                    twist.linear.x = 0.0
+                    twist.angular.z = 0.0
+                    self._cmd_pub.publish(twist)
+                    turtlebot_moving = False 
+                    victim_counter = victim_counter + 1
+                    start_time_victim = time.time()
+                    #LED blinks
+                    GPIO.output(GPIO_LED, GPIO.HIGH)
+                    time.sleep(0.5)
+                    GPIO.output(GPIO_LED, GPIO.LOW)
+                    time.sleep(0.5)
+                    GPIO.output(GPIO_LED, GPIO.HIGH)
+                    time.sleep(0.5)
+                    GPIO.output(GPIO_LED, GPIO.LOW)
+                    time.sleep(0.5)
+                    GPIO.output(GPIO_LED, GPIO.HIGH)
+                    time.sleep(0.5)
+                    GPIO.output(GPIO_LED, GPIO.LOW)
+                    time.sleep(0.5)
+            
+            else:
+                print(" ")
 
             print("RGB(%d %d %d)" % (red, green, blue))
 
             print("The color is: " + color)
-
-            # if keyboard.is_pressed('q'):
-            #     twist.linear.x = 0.0
-            #     twist.angular.z = 0.0
-            #     print("q press detected")
-            #     time.sleep(1)
-            #     print("quitting")
-            #     quit()
-
-
-
         
 def main():
     rospy.init_node('turtlebot3_obstacle')
