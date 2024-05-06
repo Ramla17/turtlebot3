@@ -165,22 +165,18 @@ class Obstacle():
                 # The robot determins whether to turn left or right
                 if lidar_distances.index(min_distance) < len(lidar_distances) / 2: 
                     # It turns right
-                    twist.linear.x = 0.25
+                    twist.linear.x = LINEAR_VEL
                     twist.angular.z = -0.5
                     self._cmd_pub.publish(twist)
                     turtlebot_moving = True
                     rospy.loginfo('turning right medium')
                 else:
                     #It turns left
-                    twist.linear.x = 0.25
+                    twist.linear.x = LINEAR_VEL
                     twist.angular.z = 0.5
                     self._cmd_pub.publish(twist)
                     turtlebot_moving = True
-                    rospy.loginfo('turning left medium')
-
-                # Move backwards to avoid the obstacle
-                # twist.linear.x = -0.1
-                # self._cmd_pub.publish(twist)        
+                    rospy.loginfo('turning left medium')       
 
             # Hard turns
             if min_distance < HARD_DISTANCE:
@@ -247,6 +243,7 @@ class Obstacle():
 
             elif red > blue and red > green:
                 color = "Red"
+                print("RGB(%d %d %d)" % (red, green, blue))
                 #stops the robot and LED blinks when victim is detected
                 if(time.time() - start_time_victim >= 10.0):
                     print("_________________")
