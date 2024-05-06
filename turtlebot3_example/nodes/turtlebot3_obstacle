@@ -24,6 +24,7 @@ from geometry_msgs.msg import Twist
 import time
 import smbus
 import keyboard
+import RPi.GPIO as GPIO
 
 # Get I2C bus
 bus = smbus.SMBus(1)
@@ -37,8 +38,12 @@ time.sleep(1)
 #def getAndUpdateColour():
 	#while True:
         
-           
-        
+# Set GPIO mode to BCM so it refferences GPIO pin number instead of PI-pin number
+GPIO.setmode(GPIO.BCM)
+
+GPIO_LED = 17 
+
+GPIO.setup(GPIO_LED,GPIO.OUT)
 
 LINEAR_VEL = 0.19 # Den koerer ikke, hvis LINEAR_VEL > 0.21
 # STOP_DISTANCE = 0.2
@@ -206,10 +211,15 @@ class Obstacle():
             blue = blue * 2
             if green >= red and green >= blue: 
                 color = "Green"
+                GPIO.output(GPIO_LED, GPIO.LOW)
+
             elif blue >= red and blue >= green:
                 color = "Blue"
+                GPIO.output(GPIO_LED, GPIO.LOW)
+
             else:
                 color = "Red"
+                GPIO.output(GPIO_LED, GPIO.HIGH) #LED set to high
 
             print("RGB(%d %d %d)" % (red, green, blue))
 
@@ -218,7 +228,9 @@ class Obstacle():
             # if keyboard.is_pressed('q'):
             #     twist.linear.x = 0.0
             #     twist.angular.z = 0.0
-            #     print("q press detected - quitting")
+            #     print("q press detected")
+            #     time.sleep(1)
+            #     print("quitting")
             #     quit()
 
 
