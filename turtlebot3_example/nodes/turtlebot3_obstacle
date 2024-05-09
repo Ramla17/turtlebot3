@@ -50,8 +50,8 @@ LINEAR_VEL = 0.19 # Den koerer ikke, hvis LINEAR_VEL > 0.21
 # STOP_DISTANCE = 0.2
 LIDAR_ERROR = 0.05
 # SAFE_STOP_DISTANCE = STOP_DISTANCE + LIDAR_ERROR
-SOFT_DISTANCE = 0.3 + LIDAR_ERROR
-MEDIUM_DISTANCE = 0.25 + LIDAR_ERROR
+SOFT_DISTANCE = 0.25 + LIDAR_ERROR
+MEDIUM_DISTANCE = 0.22 + LIDAR_ERROR
 HARD_DISTANCE = 0.2 + LIDAR_ERROR
 
 class Obstacle():
@@ -137,7 +137,7 @@ class Obstacle():
             min_distance = min(lidar_distances)
             print("min_distance:", min_distance)
 
-            if((time.time() - runtime_start) >= 120.0):
+            if((time.time() - runtime_start) >= 10.0):
                 quit_program()
 
             # Soft turns
@@ -229,47 +229,49 @@ class Obstacle():
 
             data = bus.read_i2c_block_data(0x44, 0x09, 6) #Selects the right registers
             time.sleep(0.001)
-            green = data[1] + data[0]/256 # Calculates the levels of each color [0, 255]
-            red = data[3] + data[2]/256
-            blue = data[5] + data[4]/256
+            green = data[1]*256 + data[0]# Calculates the levels of each color [0, 255]
+            red = data[3]*256 + data[2]
+            blue = data[5]*256 + data[4]
         
             # Determines the color based on which has the higher value
             color = ""
-            blue = blue * 2
+            green = green 
+            blue = blue 
             victim_timer = 10 #victim timer set to default so it reads first victim
-            if green >= red and green >= blue: 
-                color = "Green"
-                GPIO.output(GPIO_LED, GPIO.LOW)
+            # if green >= red and green >= blue: 
+            #     color = "Green"
+            #     GPIO.output(GPIO_LED, GPIO.LOW)
 
-            elif blue >= red and blue >= green:
-                color = "Blue"
-                GPIO.output(GPIO_LED, GPIO.LOW)
+            # elif blue >= red and blue >= green:
+            #     color = "Blue"
+            #     GPIO.output(GPIO_LED, GPIO.LOW)
 
-            elif red > blue and red > green:
+            if red >= green and green > blue:
+            #red > green and red > blue and red - blue  >= 1000 and red - green >= 1000:
                 color = "Red"
                 #stops the robot and LED blinks when victim is detected
-                if(time.time() - start_time_victim >= 10.0):
-                    print("_________________")
-                    print("!!! Victim Detected !!!")
-                    twist.linear.x = 0.0
-                    twist.angular.z = 0.0
-                    self._cmd_pub.publish(twist)
-                    turtlebot_moving = False 
-                    victim_counter = victim_counter + 1
-                    start_time_victim = time.time()
-                    #LED blinks
-                    GPIO.output(GPIO_LED, GPIO.HIGH)
-                    time.sleep(0.5)
-                    GPIO.output(GPIO_LED, GPIO.LOW)
-                    time.sleep(0.5)
-                    GPIO.output(GPIO_LED, GPIO.HIGH)
-                    time.sleep(0.5)
-                    GPIO.output(GPIO_LED, GPIO.LOW)
-                    time.sleep(0.5)
-                    GPIO.output(GPIO_LED, GPIO.HIGH)
-                    time.sleep(0.5)
-                    GPIO.output(GPIO_LED, GPIO.LOW)
-                    time.sleep(0.5)
+                # if(time.time() - start_time_victim >= 10.0):
+                print("_________________")
+                print("!!! Victim Detected !!!")
+                twist.linear.x = 0.0
+                twist.angular.z = 0.0
+                self._cmd_pub.publish(twist)
+                turtlebot_moving = False 
+                victim_counter = victim_counter + 1
+                start_time_victim = time.time()
+                #LED blinks
+                GPIO.output(GPIO_LED, GPIO.HIGH)
+                time.sleep(0.5)
+                GPIO.output(GPIO_LED, GPIO.LOW)
+                time.sleep(0.5)
+                GPIO.output(GPIO_LED, GPIO.HIGH)
+                time.sleep(0.5)
+                GPIO.output(GPIO_LED, GPIO.LOW)
+                time.sleep(0.5)
+                GPIO.output(GPIO_LED, GPIO.HIGH)
+                time.sleep(0.5)
+                GPIO.output(GPIO_LED, GPIO.LOW)
+                time.sleep(0.5)
             
             else:
                 print(" ")
