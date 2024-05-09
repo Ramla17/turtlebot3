@@ -28,16 +28,17 @@ import threading
 import sys
 
 # Get I2C bus
-bus = smbus.SMBus(1)
+# bus = smbus.SMBus(1)
 
 # ISL29125 address, 0x44(68)
 # Select configuation-1register, 0x01(01)
 # 0x0D(13) Operation: RGB, Range: 360 lux, Res: 16 Bits
-bus.write_byte_data(0x44, 0x01, 0x05)
-time.sleep(1)
+# bus.write_byte_data(0x44, 0x01, 0x05)
+# time.sleep(1)
 
 #def getAndUpdateColour():
 	#while True:
+<<<<<<< Updated upstream
         
 # Set GPIO mode to BCM so it refferences GPIO pin number instead of PI-pin number
 GPIO.setmode(GPIO.BCM)
@@ -45,6 +46,8 @@ GPIO.setmode(GPIO.BCM)
 GPIO_LED = 17 
 
 GPIO.setup(GPIO_LED,GPIO.OUT)
+=======
+>>>>>>> Stashed changes
 
 LINEAR_VEL = 0.19 # Den koerer ikke, hvis LINEAR_VEL > 0.21
 # STOP_DISTANCE = 0.2
@@ -103,6 +106,7 @@ class Obstacle():
         medium_turns = 0
         hard_turns = 0
 
+<<<<<<< Updated upstream
 
         # Function to quit the program
         def quit_program():
@@ -132,6 +136,12 @@ class Obstacle():
         start_time_obstacle = 10
 
         while not rospy.is_shutdown():
+=======
+        start_time = time.time()
+        endtime = 120
+        while (time.time() - start_time) < endtime:
+            # getAndUpdateColour()
+>>>>>>> Stashed changes
 
             lidar_distances = self.get_scan()
             min_distance = min(lidar_distances)
@@ -223,6 +233,7 @@ class Obstacle():
                     start_time_obstacle = time.time()
                     print("collision detected")
 
+<<<<<<< Updated upstream
             data = bus.read_i2c_block_data(0x44, 0x09, 6) #Selects the right registers
             time.sleep(0.001)
             green = data[1] + data[0]/256 # Calculates the levels of each color [0, 255]
@@ -270,10 +281,26 @@ class Obstacle():
             
             else:
                 print(" ")
+=======
+            # data = bus.read_i2c_block_data(0x44, 0x09, 6) #Selects the right registers
+            # time.sleep(0.001)
+            # green = data[1] + data[0]/256 # Calculates the levels of each color [0, 255]
+            # red = data[3] + data[2]/256
+            # blue = data[5] + data[4]/256
+            
+            # # Determines the color based on which has the higher value
+            # color = ""
+            # if green > red and green > blue: 
+            #     color = "Green"
+            # elif blue > red:
+            #     color = "Blue"
+            # else:
+            #     color = "Red"
+>>>>>>> Stashed changes
 
-            print("RGB(%d %d %d)" % (red, green, blue))
+            # print("RGB(%d %d %d)" % (red, green, blue))
 
-            print("The color is: " + color)
+            # print("The color is: " + color)
         
 def main():
     rospy.init_node('turtlebot3_obstacle')
