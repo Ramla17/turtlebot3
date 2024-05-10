@@ -225,24 +225,24 @@ class Obstacle():
 
             data = bus.read_i2c_block_data(0x44, 0x09, 6) #Selects the right registers
             time.sleep(0.001)
-            green = data[1] + data[0]/256 # Calculates the levels of each color [0, 255]
-            red = data[3] + data[2]/256
-            blue = data[5] + data[4]/256
+            green = data[1]*256 + data[0] # Calculates the levels of each color [0, 255]
+            red = data[3]*256 + data[2]
+            blue = data[5]*256 + data[4]
         
             # Determines the color based on which has the higher value
             color = ""
             blue = blue * 2
             victim_timer = 10 #victim timer set to default so it reads first victim
-            if green >= red and green >= blue: 
-                color = "Green"
-                GPIO.output(GPIO_LED, GPIO.LOW)
+            #if green >= red and green >= blue: 
+                #color = "Green"
+                #GPIO.output(GPIO_LED, GPIO.LOW)
 
-            elif blue >= red and blue >= green:
-                color = "Blue"
-                GPIO.output(GPIO_LED, GPIO.LOW)
+            #elif blue >= red and blue >= green:
+             #   color = "Blue"
+              #  GPIO.output(GPIO_LED, GPIO.LOW)
 
-            elif red > blue and red > green:
-                color = "Red"
+            if red > blue and red > green:
+                color = "Red" 
                 print("RGB(%d %d %d)" % (red, green, blue))
                 #stops the robot and LED blinks when victim is detected
                 if(time.time() - start_time_victim >= 10.0):
