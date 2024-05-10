@@ -139,7 +139,7 @@ class Obstacle():
             min_distance = min(lidar_distances)
             print("min_distance:", min_distance)
 
-            if((time.time() - runtime_start) >= 30):
+            if((time.time() - runtime_start) >= 120):
                 quit_program()
 
             # Soft turns
