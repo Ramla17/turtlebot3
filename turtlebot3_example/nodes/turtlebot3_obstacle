@@ -110,6 +110,8 @@ class Obstacle():
         left = 0
         right_close = 0
         right = 0
+        SPEED_ACCUMULATOR = 0
+        SPEED_CONUTER = 0
 
         # Function to quit the program
         def quit_program():
@@ -121,13 +123,14 @@ class Obstacle():
             print("_______________________________")
             print("Obstacles hit:", obstacle_counter)
             print("Victims detected:", victim_counter)
-            print("in front close:", in_front_close)
-            print("in front:", in_front)
-            print("left close:", left_close)
-            print("left less close:", left)
-            print("right close:", right_close)
-            print("right less close:", right)
-            print
+            #print("in front close:", in_front_close)
+            #print("in front:", in_front)
+            #print("left close:", left_close)
+            #print("left less close:", left)
+            #print("right close:", right_close)
+            #print("right less close:", right)
+            avg_speed = SPEED_ACCUMULATOR/SPEED_CONUTER
+            print("Avg speed: ", avg_speed)
             time.sleep(2)
             print("quitting..")
             sys.exit()
@@ -185,6 +188,7 @@ class Obstacle():
                     self._cmd_pub.publish(twist)
                     print("Obstacle on the left - very close")
                     right_close += 1
+                    SPEED_CONUTER += 1
             
                 else:
                     # Obstacle is less close - do a light turn
@@ -193,6 +197,8 @@ class Obstacle():
                     self._cmd_pub.publish(twist)
                     print("Obstacle on the left - less close")
                     right += 1
+                    SPEED_CONUTER += 1
+                    SPEED_ACCUMULATOR += LINEAR_VEL
             
             # Obstacle to the right
             elif min(lidar_distances[140:180]) < SAFE_STOP_DISTANCE:
@@ -203,6 +209,7 @@ class Obstacle():
                     self._cmd_pub.publish(twist)
                     print("Obstacle on the right - very close")
                     left_close += 1
+                    SPEED_CONUTER += 1
             
                 else:
                     # Obstacle is less close - do a light turn
@@ -211,6 +218,8 @@ class Obstacle():
                     self._cmd_pub.publish(twist)
                     print("Obstacle on the right - less close")
                     left += 1
+                    SPEED_CONUTER += 1
+                    SPEED_ACCUMULATOR += LINEAR_VEL
                     
             else:
                 # Move foward
@@ -219,6 +228,8 @@ class Obstacle():
                 self._cmd_pub.publish(twist)
                 turtlebot_moving = True
                 rospy.loginfo('Distance of the obstacle : %f', min_distance)
+                SPEED_ACCUMULATOR += LINEAR_VEL
+                SPEED_CONUTER += 1
                 
             if (min_distance < collision_radius):
                 if(time.time() - start_time_victim >= 10.0):
