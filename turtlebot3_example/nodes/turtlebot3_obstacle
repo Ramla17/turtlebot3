@@ -161,7 +161,8 @@ class Obstacle():
             # print("distance_right:", distance_right)
             print("min_distance_front:", min_distance_front)
 
-            if((time.time() - runtime_start) >= 30):
+            #quits program after 120 seconds
+            if((time.time() - runtime_start) >= 120):
                 quit_program()
 
             # Obstacle in front - do a u-turn
@@ -264,6 +265,7 @@ class Obstacle():
                 print("RGB(%d %d %d)" % (red, green, blue))
                 #stops the robot and LED blinks when victim is detected
                 if(time.time() - start_time_victim >= 5.0):
+                    SPEED_CONUTER += 1
                     print("_________________")
                     print("!!! Victim Detected !!!")
                     twist.linear.x = 0.0
